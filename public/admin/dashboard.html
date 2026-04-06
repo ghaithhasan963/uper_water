@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>لوحة تحكم الأدمن - Uber Water</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <style>
+    body { background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); color: #fff; min-height: 100vh; }
+    .glass-sidebar { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(12px); border-left: 1px solid rgba(59, 130, 246, 0.3); }
+    .glass-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.3s; }
+    .glass-card:hover { background: rgba(255, 255, 255, 0.1); border-color: #3b82f6; }
+    .user-item, .log-item { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); transition: all 0.2s; }
+    .user-item:hover, .log-item:hover { background: rgba(255,255,255,0.07); border-color: #3b82f6; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #1e293b; }
+    ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
+  </style>
+</head>
+<body class="font-sans antialiased">
+
+  <div class="flex h-screen overflow-hidden">
+    <aside id="appSidebar" class="hidden" data-aos="fade-left" data-aos-duration="800">
+      <div class="p-5 border-b border-gray-700/50">
+        <div class="text-2xl font-bold text-blue-400">💧 Uber Water</div>
+        <p class="text-sm text-gray-400 mt-1">مرحباً، <span id="adminName" class="text-white font-semibold"></span></p>
+      </div>
+      <nav class="flex-1 p-3">
+        <ul class="space-y-2">
+          <li><a href="#" onclick="showTab('dashboard')" class="flex items-center p-3 rounded-lg hover:bg-blue-600/20 transition group"><i class="ml-3 fas fa-tachometer-alt text-gray-400 group-hover:text-blue-400"></i> الرئيسية</a></li>
+          <li><a href="#" onclick="showTab('users')" class="flex items-center p-3 rounded-lg hover:bg-blue-600/20 transition group"><i class="ml-3 fas fa-users text-gray-400 group-hover:text-blue-400"></i> المستخدمين</a></li>
+          <li><a href="#" onclick="showTab('pending')" class="flex items-center p-3 rounded-lg hover:bg-blue-600/20 transition group"><i class="ml-3 fas fa-clock text-gray-400 group-hover:text-blue-400"></i> طلبات التسجيل</a></li>
+          <li><a href="#" onclick="showTab('edits')" class="flex items-center p-3 rounded-lg hover:bg-blue-600/20 transition group"><i class="ml-3 fas fa-edit text-gray-400 group-hover:text-blue-400"></i> طلبات التعديل</a></li>
+          <li><a href="#" onclick="showTab('reports')" class="flex items-center p-3 rounded-lg hover:bg-blue-600/20 transition group"><i class="ml-3 fas fa-exclamation-triangle text-gray-400 group-hover:text-blue-400"></i> البلاغات</a></li>
+          <li><a href="#" onclick="showTab('activity')" class="flex items-center p-3 rounded-lg hover:bg-blue-600/20 transition group"><i class="ml-3 fas fa-chart-line text-gray-400 group-hover:text-blue-400"></i> النشاطات</a></li>
+          <li><a href="#" onclick="showTab('orders')" class="flex items-center p-3 rounded-lg hover:bg-blue-600/20 transition group"><i class="ml-3 fas fa-shopping-cart text-gray-400 group-hover:text-blue-400"></i> الطلبات</a></li>
+          <li class="mt-8 pt-4 border-t border-gray-700/50"><a href="/api/auth/logout" class="flex items-center p-3 rounded-lg text-red-400 hover:bg-red-600/20 transition"><i class="ml-3 fas fa-sign-out-alt"></i> تسجيل خروج</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <main class="flex-1 overflow-y-auto p-6">
+      <div class="md:hidden flex items-center justify-between mb-4">
+        <button data-sidebar-toggle class="p-2 rounded bg-white/5"><i class="fas fa-bars"></i></button>
+        <div class="text-lg font-bold text-blue-400">💧 Uber Water</div>
+        <div></div>
+      </div>
+      <!-- Top tabs for desktop -->
+      <div class="top-tabs hidden md:flex mb-4">
+        <button onclick="showTab('dashboard')" id="tab_dashboard">الرئيسية</button>
+        <button onclick="showTab('users')" id="tab_users">المستخدمين</button>
+        <button onclick="showTab('pending')" id="tab_pending">طلبات التسجيل</button>
+        <button onclick="showTab('edits')" id="tab_edits">طلبات التعديل</button>
+        <button onclick="showTab('reports')" id="tab_reports">البلاغات</button>
+        <button onclick="showTab('activity')" id="tab_activity">النشاط</button>
+        <button onclick="showTab('orders')" id="tab_orders">الطلبات</button>
+      </div>
+      <!-- الرئيسية -->
+      <div id="dashboardTab" class="tab-content">
+        <h1 class="text-3xl font-bold mb-6" data-aos="fade-down">الرئيسية</h1>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+          <div class="glass-card p-5 rounded-xl" data-aos="fade-up" data-aos-delay="100">
+            <div class="flex items-center justify-between">
+              <div><p class="text-gray-400">إجمالي المستخدمين</p><p class="text-3xl font-bold" id="statTotalUsers">0</p></div>
+              <div class="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-400 text-xl"><i class="fas fa-users"></i></div>
+            </div>
+          </div>
+          <div class="glass-card p-5 rounded-xl" data-aos="fade-up" data-aos-delay="200">
+            <div class="flex items-center justify-between">
+              <div><p class="text-gray-400">طلبات معلقة</p><p class="text-3xl font-bold" id="statPendingUsers">0</p></div>
+              <div class="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center text-yellow-400 text-xl"><i class="fas fa-clock"></i></div>
+            </div>
+          </div>
+          <div class="glass-card p-5 rounded-xl" data-aos="fade-up" data-aos-delay="300">
+            <div class="flex items-center justify-between">
+              <div><p class="text-gray-400">طلبات نشطة</p><p class="text-3xl font-bold" id="statActiveOrders">0</p></div>
+              <div class="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center text-green-400 text-xl"><i class="fas fa-truck"></i></div>
+            </div>
+          </div>
+          <div class="glass-card p-5 rounded-xl" data-aos="fade-up" data-aos-delay="400">
+            <div class="flex items-center justify-between">
+              <div><p class="text-gray-400">بلاغات معلقة</p><p class="text-3xl font-bold" id="statReports">0</p></div>
+              <div class="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center text-red-400 text-xl"><i class="fas fa-exclamation-triangle"></i></div>
+            </div>
+          </div>
+        </div>
+        <div class="glass-card p-6 rounded-xl">
+          <h2 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-history ml-2 text-blue-400"></i> آخر النشاطات</h2>
+          <div id="recentActivity" class="space-y-2 max-h-80 overflow-y-auto"></div>
+        </div>
+      </div>
+
+      <!-- المستخدمين -->
+      <div id="usersTab" class="tab-content hidden">
+        <h1 class="text-3xl font-bold mb-6" data-aos="fade-down">إدارة المستخدمين</h1>
+        <div class="glass-card p-5 rounded-xl">
+          <div class="flex flex-wrap gap-3 mb-4">
+            <select id="userRoleFilter" class="p-2 bg-white/5 border border-gray-600 rounded-lg text-white"><option value="">كل الأدوار</option><option value="consumer">مستهلك</option><option value="supplier">مورد</option><option value="admin">أدمن</option></select>
+            <select id="userStatusFilter" class="p-2 bg-white/5 border border-gray-600 rounded-lg text-white"><option value="">كل الحالات</option><option value="active">نشط</option><option value="pending">قيد المراجعة</option><option value="suspended">موقوف</option></select>
+            <button onclick="loadUsers()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition">تصفية</button>
+          </div>
+          <div id="usersList" class="space-y-3 max-h-[70vh] overflow-y-auto"></div>
+        </div>
+      </div>
+
+      <!-- طلبات التسجيل -->
+      <div id="pendingTab" class="tab-content hidden">
+        <h1 class="text-3xl font-bold mb-6" data-aos="fade-down">طلبات التسجيل المعلقة</h1>
+        <div id="pendingList" class="space-y-3 max-h-[80vh] overflow-y-auto"></div>
+      </div>
+
+      <!-- طلبات التعديل -->
+      <div id="editsTab" class="tab-content hidden">
+        <h1 class="text-3xl font-bold mb-6" data-aos="fade-down">طلبات تعديل المعلومات</h1>
+        <div id="editsList" class="space-y-3 max-h-[80vh] overflow-y-auto"></div>
+      </div>
+
+      <!-- البلاغات -->
+      <div id="reportsTab" class="tab-content hidden">
+        <h1 class="text-3xl font-bold mb-6" data-aos="fade-down">البلاغات</h1>
+        <div id="reportsList" class="space-y-3 max-h-[80vh] overflow-y-auto"></div>
+      </div>
+
+      <!-- النشاطات -->
+      <div id="activityTab" class="tab-content hidden">
+        <h1 class="text-3xl font-bold mb-6" data-aos="fade-down">النشاطات اللحظية (آخر 24 ساعة)</h1>
+        <div id="activityLogs" class="space-y-2 max-h-[80vh] overflow-y-auto"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- تبويب الطلبات -->
+<div id="ordersTab" class="tab-content hidden">
+  <h1 class="text-3xl font-bold mb-6" data-aos="fade-down">إدارة الطلبات</h1>
+  <div class="glass-card p-5 rounded-xl">
+    <div class="flex flex-wrap gap-3 mb-4">
+      <select id="orderStatusFilter" class="p-2 bg-white/5 border border-gray-600 rounded-lg text-white">
+        <option value="">كل الحالات</option>
+        <option value="pending">معلق</option>
+        <option value="accepted">مقبول</option>
+        <option value="enroute">في الطريق</option>
+        <option value="delivered">مكتمل</option>
+        <option value="cancelled">ملغي</option>
+      </select>
+      <button onclick="loadAllOrders()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition">تصفية</button>
+    </div>
+    <div id="allOrdersList" class="space-y-3 max-h-[70vh] overflow-y-auto"></div>
+  </div>
+</div>
+
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script>AOS.init({ duration: 800, once: true });</script>
+  <link rel="stylesheet" href="/css/responsive.css">
+  <script src="/js/modals.js"></script>
+  <script src="/js/responsive.js"></script>
+  <script src="/js/admin.js"></script>
+</body>
+</html>

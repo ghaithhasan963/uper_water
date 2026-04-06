@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تسجيل جديد - Uber Water</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    body { background: linear-gradient(145deg, #0b1120 0%, #1a2639 100%); min-height: 100vh; padding: 2rem 1rem; }
+    .glass-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(12px); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 2rem; }
+    .input-field { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); transition: all 0.3s; color: white; }
+    .input-field:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.2); outline: none; }
+    #map { height: 250px; border-radius: 12px; border: 2px solid #3b82f6; }
+  </style>
+</head>
+<body class="flex items-center justify-center">
+  <div class="w-full max-w-3xl" data-aos="zoom-in" data-aos-duration="800">
+    <div class="glass-card p-6 md:p-8 shadow-2xl">
+      <div class="text-center mb-8">
+        <div class="text-5xl mb-3 animate-pulse">💧</div>
+        <h1 class="text-3xl font-bold text-white">انضم إلينا</h1>
+        <p class="text-blue-200/70">اختر نوع الحساب واملأ البيانات</p>
+      </div>
+
+      <form id="registerForm" enctype="multipart/form-data">
+        <!-- اختيار الدور -->
+        <div class="mb-6">
+          <label class="block text-blue-100 mb-2">نوع الحساب</label>
+          <div class="flex flex-wrap gap-4">
+            <label class="flex items-center bg-white/10 p-3 rounded-xl cursor-pointer hover:bg-white/20 transition flex-1 border border-transparent hover:border-blue-400">
+              <input type="radio" name="role" value="consumer" class="ml-2" checked> <span class="text-white"><i class="fas fa-user ml-1"></i> مستهلك</span>
+            </label>
+            <label class="flex items-center bg-white/10 p-3 rounded-xl cursor-pointer hover:bg-white/20 transition flex-1 border border-transparent hover:border-blue-400">
+              <input type="radio" name="role" value="supplier" class="ml-2"> <span class="text-white"><i class="fas fa-truck ml-1"></i> مورد</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- الحقول المشتركة -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div><label class="block text-blue-100 mb-1">الاسم الكامل</label><input type="text" name="name" required class="input-field w-full p-3 rounded-lg"></div>
+          <div><label class="block text-blue-100 mb-1">رقم الهاتف</label><input type="tel" name="phone" required class="input-field w-full p-3 rounded-lg" placeholder="+961..."></div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div><label class="block text-blue-100 mb-1">البريد الإلكتروني (اختياري)</label><input type="email" name="email" class="input-field w-full p-3 rounded-lg"></div>
+          <div><label class="block text-blue-100 mb-1">كلمة المرور</label><input type="password" name="password" required class="input-field w-full p-3 rounded-lg"></div>
+        </div>
+
+        <!-- حقول المستهلك -->
+        <div id="consumerFields">
+          <div class="mb-4"><label class="block text-blue-100 mb-1">العنوان التفصيلي</label><input type="text" name="address" class="input-field w-full p-3 rounded-lg" placeholder="الشارع، المبنى..."></div>
+          <div class="mb-4"><label class="block text-blue-100 mb-1">حدد موقعك على الخريطة</label><div id="map"></div><p class="text-blue-200/50 text-sm mt-1">اسحب العلامة لتحديد موقعك</p><input type="hidden" name="location" id="location"></div>
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="block text-blue-100 mb-1">المدينة</label>
+              <select name="city" id="city" class="input-field w-full p-3 rounded-lg">
+                <option value="">اختر المدينة</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-blue-100 mb-1">المنطقة</label>
+              <select name="district" id="district" class="input-field w-full p-3 rounded-lg">
+                <option value="">اختر المنطقة</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- حقول المورد -->
+        <div id="supplierFields" style="display: none;">
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <div><label class="block text-blue-100 mb-1">سعة الخزان (براميل)</label><input type="number" name="tankCapacity" class="input-field w-full p-3 rounded-lg"></div>
+            <div><label class="block text-blue-100 mb-1">رقم لوحة السيارة</label><input type="text" name="plateNumber" class="input-field w-full p-3 rounded-lg"></div>
+          </div>
+          <div class="mb-4"><label class="block text-blue-100 mb-1">صورة الصهريج</label><input type="file" name="tankImage" accept="image/*" class="input-field w-full p-2 rounded-lg file:bg-blue-600 file:text-white file:border-0 file:rounded-lg file:px-3 file:py-1"></div>
+          
+          <!-- مناطق التعبئة (محسنة باستخدام القوائم المنسدلة) -->
+          <div class="mb-4">
+            <label class="block text-blue-100 mb-2">مناطق التعبئة (أضف منطقة وسعر)</label>
+            <div id="serviceAreasContainer" class="space-y-2">
+              <div class="flex gap-2 items-center">
+                <select class="city-select p-2 bg-white/10 border border-white/20 rounded text-white flex-1">
+                  <option value="">اختر المدينة</option>
+                </select>
+                <select class="district-select p-2 bg-white/10 border border-white/20 rounded text-white flex-1">
+                  <option value="">اختر المنطقة</option>
+                </select>
+                <input type="number" placeholder="السعر" class="price-input p-2 bg-white/10 border border-white/20 rounded text-white w-24">
+                <button type="button" onclick="addServiceArea()" class="bg-blue-600 text-white p-2 rounded hover:bg-blue-700"><i class="fas fa-plus"></i></button>
+              </div>
+            </div>
+            <input type="hidden" name="serviceAreas" id="serviceAreas">
+          </div>
+        </div>
+
+        <button type="submit" class="w-full mt-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg text-lg font-semibold hover:opacity-90 transition transform hover:scale-105 shadow-lg">
+          <i class="fas fa-user-plus ml-2"></i> تسجيل
+        </button>
+      </form>
+      <p class="text-center mt-4 text-blue-200">لديك حساب؟ <a href="/login.html" class="text-white font-semibold hover:underline">تسجيل دخول</a></p>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>AOS.init();</script>
+  <script src="/js/register.js"></script>
+</body>
+</html>
