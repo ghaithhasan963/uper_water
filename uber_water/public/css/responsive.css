@@ -1,0 +1,45 @@
+/* Responsive helpers */
+/* Ensure main content uses full width when sidebar collapsed */
+.main-with-sidebar { display: block; }
+@media (min-width: 768px) {
+  .main-with-sidebar { display: grid; grid-template-columns: 16rem 1fr; }
+}
+
+/* Modal max width adjustments already handled by tailwind classes but add fallback */
+#__textModal .bg-white, #__confirmModal .bg-white { max-width: 720px; }
+
+/* Card spacing adjustments for small screens */
+.glass-card { padding: 1rem; }
+@media (min-width: 768px) {
+  .glass-card { padding: 1.25rem; }
+}
+
+/* Sidebar: ensure full height scroll on mobile when toggled */
+#appSidebar { z-index: 60; }
+#appSidebar.open { position: fixed; left: 0; top: 0; bottom: 0; }
+
+/* Slight tweak for order-card in small screens */
+.order-card { width: 100%; }
+
+/* Improve buttons wrap */
+.button-group { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+/* Ensure hidden utilities don't conflict */
+.hide-on-mobile { display: none; }
+@media (min-width: 768px) { .hide-on-mobile { display: block; } }
+
+/* Top tabs for desktop */
+.top-tabs {
+  display: none;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.5rem;
+  background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+@media (min-width: 768px) {
+  .top-tabs { display: flex; position: sticky; top: 0; z-index: 40; }
+}
+.top-tabs button { background: transparent; border: none; color: #cbd5e1; padding: 0.5rem 0.75rem; border-radius: 0.5rem; cursor: pointer; }
+.top-tabs button.active { background: rgba(59,130,246,0.12); color: #fff; }
+.top-tabs button:hover { background: rgba(59,130,246,0.06); }

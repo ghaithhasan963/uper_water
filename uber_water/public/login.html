@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تسجيل دخول - Uber Water</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body { background: linear-gradient(145deg, #0b1120 0%, #1a2639 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .glass-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(12px); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 2rem; }
+    .input-field { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); transition: all 0.3s; }
+    .input-field:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.2); outline: none; }
+  </style>
+</head>
+<body class="p-4">
+  <div class="w-full max-w-md" data-aos="fade-up" data-aos-duration="800">
+    <div class="glass-card p-8 shadow-2xl">
+      <div class="text-center mb-8">
+        <div class="text-5xl mb-3 animate-bounce">💧</div>
+        <h1 class="text-3xl font-bold text-white">تسجيل الدخول</h1>
+        <p class="text-blue-200/70">أهلاً بعودتك! أدخل بياناتك للمتابعة</p>
+      </div>
+      <form id="loginForm">
+        <div class="mb-5">
+          <label class="block text-blue-100 mb-2 text-sm">رقم الهاتف</label>
+          <div class="relative">
+            <span class="absolute right-3 top-3 text-blue-300"><i class="fas fa-phone"></i></span>
+            <input type="tel" name="phone" required class="input-field w-full pr-10 p-3 rounded-lg text-white placeholder-blue-200/50" placeholder="+961 70 123 456">
+          </div>
+        </div>
+        <div class="mb-6">
+          <label class="block text-blue-100 mb-2 text-sm">كلمة المرور</label>
+          <div class="relative">
+            <span class="absolute right-3 top-3 text-blue-300"><i class="fas fa-lock"></i></span>
+            <input type="password" name="password" required class="input-field w-full pr-10 p-3 rounded-lg text-white placeholder-blue-200/50" placeholder="********">
+          </div>
+        </div>
+        <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg text-lg font-semibold hover:opacity-90 transition transform hover:scale-105 shadow-lg">
+          <i class="fas fa-sign-in-alt ml-2"></i> دخول
+        </button>
+      </form>
+      <p class="text-center mt-6 text-blue-200">
+        ليس لديك حساب؟ 
+        <a href="/register.html" class="text-white font-semibold hover:underline">إنشاء حساب جديد</a>
+      </p>
+      <p class="text-center mt-2">
+        <a href="#" class="text-blue-300 text-sm hover:text-white">نسيت كلمة المرور؟</a>
+      </p>
+    </div>
+  </div>
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script>AOS.init();</script>
+  <script src="/js/login.js"></script>
+</body>
+</html>

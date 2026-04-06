@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>لوحة تحكم المستهلك - Uber Water</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- AOS Library -->
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Leaflet (للخريطة) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Socket.io -->
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <style>
+    body { background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); color: #fff; min-height: 100vh; }
+    .glass-sidebar { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(12px); border-left: 1px solid rgba(59, 130, 246, 0.3); }
+    .glass-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.3s; }
+    .glass-card:hover { background: rgba(255, 255, 255, 0.1); border-color: #3b82f6; transform: translateY(-2px); }
+    .supplier-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255,255,255,0.05); transition: all 0.3s; }
+    .supplier-card:hover { background: rgba(255, 255, 255, 0.07); border-color: #3b82f6; transform: translateY(-4px); }
+    #map { height: 250px; width: 100%; border-radius: 12px; border: 2px solid rgba(59, 130, 246, 0.3); margin-bottom: 1rem; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #1e293b; }
+    ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
+  </style>
+</head>
+<body class="font-sans antialiased">
+
+  <div class="flex h-screen overflow-hidden">
+    <!-- الشريط الجانبي -->
+    <aside id="appSidebar" class="hidden" data-aos="fade-left" data-aos-duration="800">
+      <div class="p-5 border-b border-gray-700/50">
+        <div class="text-2xl font-bold text-blue-400">💧 Uber Water</div>
+        <p class="text-sm text-gray-400 mt-1">مرحباً، <span id="consumerName" class="text-white font-semibold"></span></p>
+      </div>
+      <nav class="flex-1 p-3">
+        <ul class="space-y-2">
+          <li><a href="#" onclick="showTab('dashboard')" class="flex items-center p-3 rounded-lg hover:bg-blue-600/20 transition group"><i class="ml-3 fas fa-tachometer-alt text-gray-400 group-hover:text-blue-400"></i> <span>الرئيسية</span></a></li>
+          <li><a href="#" onclick="showTab('newOrder')" class="flex items-center p-3 rounded-lg hover:bg-blue-600/20 transition group"><i class="ml-3 fas fa-plus-circle text-gray-400 group-hover:text-blue-400"></i> <span>طلب جديد</span></a></li>
+          <li><a href="#" onclick="showTab('orders')" class="flex items-center p-3 rounded-lg hover:bg-blue-600/20 transition group"><i class="ml-3 fas fa-history text-gray-400 group-hover:text-blue-400"></i> <span>طلباتي</span></a></li>
+          <li><a href="#" onclick="showTab('notifications')" class="flex items-center p-3 rounded-lg hover:bg-blue-600/20 transition group relative"><i class="ml-3 fas fa-bell text-gray-400 group-hover:text-blue-400"></i> <span>الإشعارات</span> <span id="notifBadge" class="bg-red-500 text-white text-xs rounded-full px-2 py-0.5 mr-auto hidden">0</span></a></li>
+          <li><a href="#" onclick="showTab('profile')" class="flex items-center p-3 rounded-lg hover:bg-blue-600/20 transition group"><i class="ml-3 fas fa-user text-gray-400 group-hover:text-blue-400"></i> <span>الملف الشخصي</span></a></li>
+          <li><a href="#" onclick="showTab('ratings')" class="flex items-center p-3 rounded-lg hover:bg-blue-600/20 transition group"><i class="ml-3 fas fa-star text-gray-400 group-hover:text-blue-400"></i> <span>تقييماتي</span></a></li>
+          <li class="mt-8 pt-4 border-t border-gray-700/50"><a href="/api/auth/logout" class="flex items-center p-3 rounded-lg text-red-400 hover:bg-red-600/20 transition"><i class="ml-3 fas fa-sign-out-alt"></i> <span>تسجيل خروج</span></a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- المحتوى الرئيسي -->
+    <main class="flex-1 overflow-y-auto p-6">
+      <!-- mobile header with hamburger -->
+      <div class="md:hidden flex items-center justify-between mb-4">
+        <button data-sidebar-toggle class="p-2 rounded bg-white/5"><i class="fas fa-bars"></i></button>
+        <div class="text-lg font-bold text-blue-400">💧 Uber Water</div>
+        <div></div>
+      </div>
+      <!-- Top tabs for desktop -->
+      <div class="top-tabs hidden md:flex mb-4">
+        <button onclick="showTab('dashboard')" id="tab_dashboard">الرئيسية</button>
+        <button onclick="showTab('newOrder')" id="tab_newOrder">طلب جديد</button>
+        <button onclick="showTab('orders')" id="tab_orders">طلباتي</button>
+        <button onclick="showTab('notifications')" id="tab_notifications">الإشعارات</button>
+        <button onclick="showTab('profile')" id="tab_profile">الملف الشخصي</button>
+        <button onclick="showTab('ratings')" id="tab_ratings">تقييماتي</button>
+      </div>
+      <!-- تبويب الرئيسية -->
+      <div id="dashboardTab" class="tab-content">
+        <h1 class="text-3xl font-bold mb-6" data-aos="fade-down">الرئيسية</h1>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
+          <div class="glass-card p-5 rounded-xl" data-aos="fade-up" data-aos-delay="100">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-400 text-sm">طلبات قيد الانتظار</p>
+                <p class="text-3xl font-bold" id="statOrdersPending">0</p>
+              </div>
+              <div class="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center text-yellow-400 text-xl"><i class="fas fa-clock"></i></div>
+            </div>
+          </div>
+          <div class="glass-card p-5 rounded-xl" data-aos="fade-up" data-aos-delay="200">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-400 text-sm">طلبات مكتملة</p>
+                <p class="text-3xl font-bold" id="statOrdersCompleted">0</p>
+              </div>
+              <div class="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center text-green-400 text-xl"><i class="fas fa-check-circle"></i></div>
+            </div>
+          </div>
+          <div class="glass-card p-5 rounded-xl" data-aos="fade-up" data-aos-delay="300">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-400 text-sm">إجمالي المصاريف</p>
+                <p class="text-3xl font-bold" id="statTotalSpent">0</p>
+              </div>
+              <div class="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center text-purple-400 text-xl"><i class="fas fa-dollar-sign"></i></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card p-6 rounded-xl" data-aos="fade-up">
+          <h2 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-history ml-2 text-blue-400"></i> آخر الطلبات</h2>
+          <div id="recentOrders" class="space-y-3 max-h-80 overflow-y-auto"></div>
+        </div>
+      </div>
+
+      <!-- تبويب طلب جديد -->
+      <div id="newOrderTab" class="tab-content hidden">
+        <h1 class="text-3xl font-bold mb-6" data-aos="fade-down">طلب جديد</h1>
+        <div class="glass-card p-6 rounded-xl">
+          <div class="mb-5">
+            <label class="block text-gray-300 mb-2">حدد منطقتك</label>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <select id="filterCity" class="p-3 bg-white/5 border border-gray-600 rounded-lg text-white focus:border-blue-400 transition">
+                <option value="">اختر المدينة</option>
+              </select>
+              <select id="filterDistrict" class="p-3 bg-white/5 border border-gray-600 rounded-lg text-white focus:border-blue-400 transition">
+                <option value="">اختر المنطقة</option>
+              </select>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-3 mb-5">
+            <input type="number" id="filterMinPrice" placeholder="أقل سعر" class="p-3 bg-white/5 border border-gray-600 rounded-lg text-white w-32 focus:border-blue-400">
+            <input type="number" id="filterMaxPrice" placeholder="أعلى سعر" class="p-3 bg-white/5 border border-gray-600 rounded-lg text-white w-32 focus:border-blue-400">
+            <select id="filterSort" class="p-3 bg-white/5 border border-gray-600 rounded-lg text-white focus:border-blue-400">
+              <option value="rating_desc">التقييم (الأعلى أولاً)</option>
+              <option value="price_asc">السعر (الأقل أولاً)</option>
+              <option value="price_desc">السعر (الأعلى أولاً)</option>
+            </select>
+            <button onclick="filterSuppliers()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition">بحث</button>
+          </div>
+          <div id="suppliersList" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto p-1"></div>
+        </div>
+      </div>
+
+      <!-- تبويب طلباتي -->
+      <div id="ordersTab" class="tab-content hidden">
+        <h1 class="text-3xl font-bold mb-6" data-aos="fade-down">طلباتي</h1>
+        <div id="consumerOrdersList" class="space-y-3 max-h-[80vh] overflow-y-auto"></div>
+      </div>
+
+      <!-- تبويب الإشعارات -->
+      <div id="notificationsTab" class="tab-content hidden">
+        <h1 class="text-3xl font-bold mb-6" data-aos="fade-down">الإشعارات</h1>
+        <div id="notificationsList" class="space-y-3 max-h-[80vh] overflow-y-auto"></div>
+      </div>
+
+      <!-- تبويب الملف الشخصي -->
+      <div id="profileTab" class="tab-content hidden">
+        <h1 class="text-3xl font-bold mb-6" data-aos="fade-down">الملف الشخصي</h1>
+        <div class="glass-card p-6 rounded-xl">
+          <div id="map"></div>
+          <form id="profileForm" class="space-y-5">
+            <div>
+              <label class="block text-gray-400 mb-1">الاسم</label>
+              <input type="text" name="name" class="w-full p-3 bg-white/5 border border-gray-600 rounded-lg text-white focus:border-blue-400 transition" readonly>
+            </div>
+            <div>
+              <label class="block text-gray-400 mb-1">رقم الهاتف</label>
+              <input type="text" name="phone" class="w-full p-3 bg-white/5 border border-gray-600 rounded-lg text-white focus:border-blue-400 transition" readonly>
+            </div>
+            <div>
+              <label class="block text-gray-400 mb-1">البريد الإلكتروني</label>
+              <input type="email" name="email" class="w-full p-3 bg-white/5 border border-gray-600 rounded-lg text-white focus:border-blue-400 transition" readonly>
+            </div>
+            <div>
+              <label class="block text-gray-400 mb-1">العنوان التفصيلي</label>
+              <input type="text" name="address" class="w-full p-3 bg-white/5 border border-gray-600 rounded-lg text-white focus:border-blue-400 transition" readonly>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-gray-400 mb-1">المدينة</label>
+                <input type="text" name="city" class="w-full p-3 bg-white/5 border border-gray-600 rounded-lg text-white focus:border-blue-400 transition" readonly>
+              </div>
+              <div>
+                <label class="block text-gray-400 mb-1">المنطقة</label>
+                <input type="text" name="district" class="w-full p-3 bg-white/5 border border-gray-600 rounded-lg text-white focus:border-blue-400 transition" readonly>
+              </div>
+            </div>
+            <button type="button" onclick="enableEdit()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition">طلب تعديل</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- تبويب تقييماتي -->
+      <div id="ratingsTab" class="tab-content hidden">
+        <h1 class="text-3xl font-bold mb-6" data-aos="fade-down">تقييماتي</h1>
+        <div id="ratingsList" class="space-y-3 max-h-[80vh] overflow-y-auto"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- AOS -->
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    AOS.init({ duration: 800, once: true });
+  </script>
+  <link rel="stylesheet" href="/css/responsive.css">
+  <script src="/js/modals.js"></script>
+  <script src="/js/responsive.js"></script>
+  <script src="/js/consumer.js"></script>
+</body>
+</html>
+
+<!-- Order Modal -->
+<div id="orderModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+  <div class="bg-white rounded-lg w-11/12 md:w-1/2 p-6 text-black">
+    <h3 class="text-xl font-bold mb-3">إنشاء طلب</h3>
+    <form id="orderForm" class="space-y-3">
+      <input type="hidden" id="orderSupplierId">
+      <div>
+        <label class="block text-sm">الكمية (براميل)</label>
+        <input id="orderQuantity" type="number" class="w-full p-2 border rounded" min="1" required>
+      </div>
+      <div>
+        <label class="block text-sm">خيار التوصيل</label>
+        <select id="orderDeliveryOption" class="w-full p-2 border rounded">
+          <option value="now">الآن</option>
+          <option value="today">اليوم (مساء)</option>
+          <option value="tomorrow">غداً</option>
+          <option value="scheduled">تحديد موعد</option>
+        </select>
+      </div>
+      <div id="scheduledRow" class="hidden">
+        <label class="block text-sm">حدد التاريخ والوقت</label>
+        <input id="orderScheduledAt" type="datetime-local" class="w-full p-2 border rounded">
+      </div>
+      <div class="flex justify-end gap-2">
+        <button type="button" onclick="closeOrderModal()" class="px-4 py-2 bg-gray-200 rounded">إلغاء</button>
+        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">أرسل الطلب</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Rating Modal -->
+<div id="ratingModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+  <div class="bg-white rounded-lg w-11/12 md:w-1/2 p-6 text-black">
+    <h3 class="text-xl font-bold mb-3">تقييم الطلب</h3>
+    <form id="ratingForm" class="space-y-3">
+      <input type="hidden" id="ratingOrderId">
+      <div>
+        <label class="block text-sm">الالتزام بالموعد (1-5)</label>
+        <input id="ratingPunctuality" type="number" min="1" max="5" value="5" class="w-full p-2 border rounded" required>
+      </div>
+      <div>
+        <label class="block text-sm">جودة الماء (1-5)</label>
+        <input id="ratingQuality" type="number" min="1" max="5" value="5" class="w-full p-2 border rounded" required>
+      </div>
+      <div>
+        <label class="block text-sm">نظافة الصهريج (1-5)</label>
+        <input id="ratingClean" type="number" min="1" max="5" value="5" class="w-full p-2 border rounded" required>
+      </div>
+      <div>
+        <label class="block text-sm">احترافية السائق (1-5)</label>
+        <input id="ratingProf" type="number" min="1" max="5" value="5" class="w-full p-2 border rounded" required>
+      </div>
+      <div>
+        <label class="block text-sm">تعليق (اختياري)</label>
+        <textarea id="ratingComment" class="w-full p-2 border rounded"></textarea>
+      </div>
+      <div class="flex justify-end gap-2">
+        <button type="button" onclick="closeRatingModal()" class="px-4 py-2 bg-gray-200 rounded">إلغاء</button>
+        <button type="submit" class="px-4 py-2 bg-yellow-600 text-white rounded">إرسال التقييم</button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Uber Water - تجربة الماء النقي</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Swiper CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+  <!-- AOS (سنستخدم GSAP بدلاً منه لكن نحتفظ به للبساطة) -->
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Google Fonts (Cairo + Playfair Display للتباين) -->
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      overflow-x: hidden;
+      font-family: 'Cairo', sans-serif;
+      background-color: #030614;
+      color: #fff;
+    }
+    #canvas-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+    /* شريط التمرير المخصص */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #0a0c1a; }
+    ::-webkit-scrollbar-thumb { background: linear-gradient(45deg, #3b82f6, #8b5cf6); border-radius: 10px; }
+    
+    /* شريط التنقل */
+    .navbar {
+      transition: all 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+      background: rgba(3, 6, 20, 0.2);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      transform: translateY(0);
+    }
+    .navbar-hidden {
+      transform: translateY(-100%);
+    }
+    .navbar-scrolled {
+      background: rgba(3, 6, 20, 0.85);
+      backdrop-filter: blur(15px);
+      border-bottom: 1px solid rgba(59, 130, 246, 0.3);
+      box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+    }
+    .nav-link {
+      position: relative;
+      transition: color 0.3s;
+    }
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+      transition: width 0.3s;
+    }
+    .nav-link:hover::after {
+      width: 100%;
+    }
+
+    /* أزرار */
+    .btn-primary {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      transition: all 0.4s;
+      box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.5);
+    }
+    .btn-primary:hover {
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 20px 30px -5px rgba(139, 92, 246, 0.6);
+    }
+    .btn-outline {
+      border: 2px solid rgba(255,255,255,0.2);
+      background: transparent;
+      transition: all 0.4s;
+      backdrop-filter: blur(5px);
+    }
+    .btn-outline:hover {
+      border-color: #3b82f6;
+      background: rgba(59, 130, 246, 0.1);
+      transform: translateY(-3px) scale(1.05);
+    }
+
+    /* البطاقات */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .glass-card:hover {
+      border-color: rgba(59, 130, 246, 0.5);
+      transform: translateY(-10px) scale(1.02);
+      box-shadow: 0 30px 40px -20px rgba(59, 130, 246, 0.5);
+    }
+
+    /* النص المتوهج */
+    .glow-text {
+      text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+    }
+
+    /* سلايدر */
+    .swiper {
+      width: 100%;
+      padding-bottom: 50px;
+    }
+    .swiper-slide {
+      background: rgba(255,255,255,0.02);
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 30px;
+      padding: 30px;
+      transition: all 0.3s;
+      opacity: 0.7;
+      transform: scale(0.9);
+    }
+    .swiper-slide-active {
+      opacity: 1;
+      transform: scale(1);
+      border-color: #3b82f6;
+      box-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
+    }
+    .swiper-pagination-bullet {
+      background: rgba(255,255,255,0.3);
+    }
+    .swiper-pagination-bullet-active {
+      background: #3b82f6;
+    }
+
+    /* عنوان رئيسي */
+    .hero-title {
+      font-size: clamp(2.5rem, 10vw, 6rem);
+      font-weight: 900;
+      line-height: 1.1;
+      font-family: 'Playfair Display', serif;
+    }
+    .hero-title span {
+      background: linear-gradient(135deg, #60a5fa, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: inline-block;
+    }
+
+    /* تأثير parallax للخلفية */
+    .parallax-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 120%;
+      background: radial-gradient(circle at 20% 50%, rgba(59,130,246,0.15), transparent 50%);
+      pointer-events: none;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- خلفية Three.js -->
+  <div id="canvas-container"></div>
+  <div class="parallax-bg" id="parallaxBg"></div>
+
+  <!-- شريط التنقل -->
+  <nav id="navbar" class="navbar fixed w-full z-50 py-4">
+    <div class="container mx-auto px-4 flex justify-between items-center">
+      <div class="text-2xl md:text-3xl font-black">
+        <span class="text-blue-500">💧</span> UBER <span class="text-purple-500">WATER</span>
+      </div>
+      <div class="hidden md:flex space-x-8 space-x-reverse">
+        <a href="#" class="nav-link text-white/80 hover:text-white">الرئيسية</a>
+        <a href="#how-it-works" class="nav-link text-white/80 hover:text-white">كيف يعمل</a>
+        <a href="#features" class="nav-link text-white/80 hover:text-white">المميزات</a>
+        <a href="#testimonials" class="nav-link text-white/80 hover:text-white">الآراء</a>
+        <a href="#contact" class="nav-link text-white/80 hover:text-white">اتصل بنا</a>
+      </div>
+      <div class="flex gap-3">
+        <a href="/login.html" class="px-5 py-2 btn-outline rounded-full text-white">دخول</a>
+        <a href="/register.html" class="px-5 py-2 btn-primary rounded-full text-white">انضم الآن</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- المحتوى الرئيسي -->
+  <main class="relative z-10">
+
+    <!-- Hero Section مع تأخير 2 ثانية للأنيميشن -->
+    <section class="min-h-screen flex items-center justify-center px-4 text-center relative">
+      <div class="max-w-5xl">
+        <h1 id="heroTitle" class="hero-title mb-6 opacity-0 translate-y-10">
+          الماء النقي <span>يوصلك</span><br>أينما كنت
+        </h1>
+        <p id="heroSub" class="text-xl md:text-2xl text-gray-300 mb-8 max-w-2xl mx-auto opacity-0 translate-y-10">
+          اطلب مياه نقية من موردين معتمدين، واستلمها في دقائق. <br>نحن نربطك بأقرب الموردين لك.
+        </p>
+        <div id="heroButtons" class="flex flex-col sm:flex-row justify-center gap-4 opacity-0 translate-y-10">
+          <a href="#how-it-works" class="px-8 py-4 btn-primary rounded-full text-lg font-bold">
+            <i class="ml-2 fas fa-play-circle"></i> اكتشف كيف
+          </a>
+          <a href="/register.html" class="px-8 py-4 btn-outline rounded-full text-lg font-bold">
+            <i class="ml-2 fas fa-user-plus"></i> ابدأ مجاناً
+          </a>
+        </div>
+        <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce hidden md:block">
+          <i class="fas fa-chevron-down text-3xl text-blue-400"></i>
+        </div>
+      </div>
+    </section>
+
+    <!-- كيف يعمل (مع سلايدر) -->
+    <section id="how-it-works" class="py-32 px-4">
+      <div class="container mx-auto">
+        <h2 class="text-5xl md:text-6xl font-black text-center mb-4 glow-text opacity-0 translate-y-10 section-title">كيف يعمل</h2>
+        <p class="text-center text-gray-400 mb-16 max-w-2xl mx-auto text-xl opacity-0 translate-y-10 section-sub">ثلاث خطوات بسيطة لتحصل على الماء أينما كنت</p>
+
+        <!-- Swiper -->
+        <div class="swiper mySwiper opacity-0 scale-95 section-swiper">
+          <div class="swiper-wrapper">
+            <div class="swiper-slide">
+              <div class="text-7xl mb-6 text-blue-400">📝</div>
+              <h3 class="text-3xl font-bold mb-4">1. سجل كمستهلك أو مورد</h3>
+              <p class="text-gray-400 text-lg">أنشئ حسابك مجاناً واختر دورك بكل سهولة</p>
+            </div>
+            <div class="swiper-slide">
+              <div class="text-7xl mb-6 text-purple-400">📍</div>
+              <h3 class="text-3xl font-bold mb-4">2. حدد موقعك</h3>
+              <p class="text-gray-400 text-lg">حدد عنوانك على الخريطة بدقة عالية</p>
+            </div>
+            <div class="swiper-slide">
+              <div class="text-7xl mb-6 text-pink-400">🚛</div>
+              <h3 class="text-3xl font-bold mb-4">3. استلم طلبك</h3>
+              <p class="text-gray-400 text-lg">يصل إليك الماء خلال وقت قياسي</p>
+            </div>
+          </div>
+          <div class="swiper-pagination"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- المميزات -->
+    <section id="features" class="py-32 px-4">
+      <div class="container mx-auto">
+        <h2 class="text-5xl md:text-6xl font-black text-center mb-4 glow-text opacity-0 translate-y-10 section-title">لماذا تختارنا؟</h2>
+        <p class="text-center text-gray-400 mb-16 max-w-2xl mx-auto text-xl opacity-0 translate-y-10 section-sub">نقدم لك تجربة فريدة تجعل طلب الماء سهلاً وآمناً</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div class="glass-card p-8 rounded-3xl text-center opacity-0 translate-y-10 feature-card">
+            <i class="fas fa-bolt text-5xl text-yellow-400 mb-4"></i>
+            <h4 class="text-2xl font-bold mb-3">سريع وموثوق</h4>
+            <p class="text-gray-400">يصل طلبك في أسرع وقت</p>
+          </div>
+          <div class="glass-card p-8 rounded-3xl text-center opacity-0 translate-y-10 feature-card">
+            <i class="fas fa-tag text-5xl text-green-400 mb-4"></i>
+            <h4 class="text-2xl font-bold mb-3">أسعار شفافة</h4>
+            <p class="text-gray-400">تعرف على السعر قبل الطلب</p>
+          </div>
+          <div class="glass-card p-8 rounded-3xl text-center opacity-0 translate-y-10 feature-card">
+            <i class="fas fa-map-marked-alt text-5xl text-red-400 mb-4"></i>
+            <h4 class="text-2xl font-bold mb-3">تتبع مباشر</h4>
+            <p class="text-gray-400">اعرف موقع المورد لحظة بلحظة</p>
+          </div>
+          <div class="glass-card p-8 rounded-3xl text-center opacity-0 translate-y-10 feature-card">
+            <i class="fas fa-star text-5xl text-purple-400 mb-4"></i>
+            <h4 class="text-2xl font-bold mb-3">موردين مُقيّمين</h4>
+            <p class="text-gray-400">اختر الأفضل بناءً على تقييمات حقيقية</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- آراء العملاء (سلايدر) -->
+    <section id="testimonials" class="py-32 px-4">
+      <div class="container mx-auto">
+        <h2 class="text-5xl md:text-6xl font-black text-center mb-4 glow-text opacity-0 translate-y-10 section-title">ماذا قال عملاؤنا؟</h2>
+        <p class="text-center text-gray-400 mb-16 max-w-2xl mx-auto text-xl opacity-0 translate-y-10 section-sub">انضم إلى آلاف المستخدمين السعداء</p>
+        <div class="swiper testimonialSwiper opacity-0 scale-95 section-swiper">
+          <div class="swiper-wrapper">
+            <div class="swiper-slide">
+              <i class="fas fa-quote-right text-6xl text-blue-400/20 mb-4"></i>
+              <p class="text-xl mb-6">"خدمة رائعة وسريعة، أنقذتني في عز الصيف. المورد كان محترفاً والماء نقي."</p>
+              <div class="flex items-center justify-center">
+                <div class="w-14 h-14 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl">ع</div>
+                <div class="mr-4 text-right">
+                  <p class="font-bold text-lg">علي</p>
+                  <div class="text-yellow-400">★★★★★</div>
+                </div>
+              </div>
+            </div>
+            <div class="swiper-slide">
+              <i class="fas fa-quote-right text-6xl text-blue-400/20 mb-4"></i>
+              <p class="text-xl mb-6">"أصبحت أطلب الماء وأنا في مكتبي، يوصلوني خلال ساعة. منصة ممتازة وموثوقة."</p>
+              <div class="flex items-center justify-center">
+                <div class="w-14 h-14 bg-gradient-to-br from-green-600 to-teal-600 rounded-full flex items-center justify-center text-white font-bold text-xl">س</div>
+                <div class="mr-4 text-right">
+                  <p class="font-bold text-lg">سارة</p>
+                  <div class="text-yellow-400">★★★★★</div>
+                </div>
+              </div>
+            </div>
+            <div class="swiper-slide">
+              <i class="fas fa-quote-right text-6xl text-blue-400/20 mb-4"></i>
+              <p class="text-xl mb-6">"كنا نعاني من عدم وجود موردين موثوقين، الآن الوضع تغير تماماً. شكراً Uber Water."</p>
+              <div class="flex items-center justify-center">
+                <div class="w-14 h-14 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-white font-bold text-xl">م</div>
+                <div class="mr-4 text-right">
+                  <p class="font-bold text-lg">محمد</p>
+                  <div class="text-yellow-400">★★★★☆</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="swiper-pagination"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- دعوة للانضمام -->
+    <section class="py-32 px-4">
+      <div class="container mx-auto text-center">
+        <div class="glass-card p-16 rounded-[50px] opacity-0 translate-y-10 cta-card" data-aos="zoom-in">
+          <h2 class="text-5xl md:text-6xl font-black mb-6 glow-text">انضم إلينا اليوم</h2>
+          <p class="text-2xl mb-10 max-w-2xl mx-auto text-gray-300">سواء كنت مستهلكاً تبحث عن مياه نقية أو مورداً تريد توسيع عملك، نحن هنا لمساعدتك.</p>
+          <div class="flex flex-col sm:flex-row justify-center gap-4">
+            <a href="/register.html?role=consumer" class="px-10 py-4 btn-primary rounded-full text-xl font-bold">أطلب ماء الآن</a>
+            <a href="/register.html?role=supplier" class="px-10 py-4 btn-outline rounded-full text-xl font-bold">كن مورداً</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- فوتر متطور -->
+    <footer id="contact" class="py-20 px-4 border-t border-white/5">
+      <div class="container mx-auto">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-10">
+          <div>
+            <div class="text-3xl font-black text-blue-500 mb-6">💧 UBER WATER</div>
+            <p class="text-gray-400 leading-relaxed">منصة ربط موردي المياه بالمستهلكين في لبنان، نوفر لك الماء النقي أينما كنت.</p>
+          </div>
+          <div>
+            <h4 class="text-xl font-bold mb-6">روابط سريعة</h4>
+            <ul class="space-y-3 text-gray-400">
+              <li><a href="#" class="hover:text-blue-400 transition">الرئيسية</a></li>
+              <li><a href="#how-it-works" class="hover:text-blue-400 transition">كيف يعمل</a></li>
+              <li><a href="/login.html" class="hover:text-blue-400 transition">تسجيل دخول</a></li>
+              <li><a href="/register.html" class="hover:text-blue-400 transition">إنشاء حساب</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="text-xl font-bold mb-6">الدعم</h4>
+            <ul class="space-y-3 text-gray-400">
+              <li><a href="#" class="hover:text-blue-400 transition">الشروط والأحكام</a></li>
+              <li><a href="#" class="hover:text-blue-400 transition">سياسة الخصوصية</a></li>
+              <li><a href="https://wa.me/961000000000" class="hover:text-blue-400 transition"><i class="fab fa-whatsapp ml-2"></i> واتساب</a></li>
+              <li><a href="#" class="hover:text-blue-400 transition">الأسئلة الشائعة</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="text-xl font-bold mb-6">تابعنا</h4>
+            <div class="flex gap-4 text-3xl">
+              <a href="#" class="hover:text-blue-400 transition"><i class="fab fa-facebook"></i></a>
+              <a href="#" class="hover:text-blue-400 transition"><i class="fab fa-twitter"></i></a>
+              <a href="#" class="hover:text-blue-400 transition"><i class="fab fa-instagram"></i></a>
+              <a href="#" class="hover:text-blue-400 transition"><i class="fab fa-linkedin"></i></a>
+            </div>
+          </div>
+        </div>
+        <div class="border-t border-white/5 mt-12 pt-6 text-center text-gray-500 text-sm">
+          © 2025 Uber Water - جميع الحقوق محفوظة. تصميم وتطوير بإتقان.
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <!-- المكتبات -->
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <!-- Three.js -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.128.0/build/three.module.js"
+      }
+    }
+  </script>
+  <!-- ملفنا الرئيسي -->
+  <script type="module" src="/js/landing.js"></script>
+  <script>
+    // تهيئة GSAP و ScrollTrigger
+    gsap.registerPlugin(ScrollTrigger);
+
+    // تأخير ظهور العناصر الرئيسية بمقدار 2 ثانية مع ترتيب
+    const tl = gsap.timeline({ delay: 2 });
+    tl.to('#heroTitle', { duration: 1.5, opacity: 1, y: 0, ease: 'power3.out' })
+      .to('#heroSub', { duration: 1, opacity: 1, y: 0, ease: 'power3.out' }, '-=0.8')
+      .to('#heroButtons', { duration: 1, opacity: 1, y: 0, ease: 'power3.out' }, '-=0.8');
+
+    // تأثيرات التمرير (parallax) للخلفية
+    gsap.to('#parallaxBg', {
+      y: '20%',
+      ease: 'none',
+      scrollTrigger: {
+        trigger: 'body',
+        start: 'top top',
+        end: 'bottom bottom',
+        scrub: 1
+      }
+    });
+
+    // إخفاء الناف بار عند التمرير لأسفل
+    let lastScroll = 0;
+    window.addEventListener('scroll', () => {
+      const navbar = document.getElementById('navbar');
+      const currentScroll = window.pageYOffset;
+      if (currentScroll > lastScroll && currentScroll > 100) {
+        navbar.classList.add('navbar-hidden');
+      } else {
+        navbar.classList.remove('navbar-hidden');
+      }
+      lastScroll = currentScroll;
+      
+      // تغيير لون الناف بار عند التمرير
+      if (currentScroll > 50) {
+        navbar.classList.add('navbar-scrolled');
+      } else {
+        navbar.classList.remove('navbar-scrolled');
+      }
+    });
+
+    // تهيئة السلايدرات
+    const swiper = new Swiper('.mySwiper', {
+      effect: 'coverflow',
+      grabCursor: true,
+      centeredSlides: true,
+      slidesPerView: 'auto',
+      coverflowEffect: {
+        rotate: 50,
+        stretch: 0,
+        depth: 100,
+        modifier: 1,
+        slideShadows: true,
+      },
+      pagination: {
+        el: '.swiper-pagination',
+        clickable: true,
+      },
+      autoplay: {
+        delay: 3000,
+        disableOnInteraction: false,
+      },
+    });
+
+    const testimonialSwiper = new Swiper('.testimonialSwiper', {
+      slidesPerView: 1,
+      spaceBetween: 30,
+      loop: true,
+      pagination: {
+        el: '.swiper-pagination',
+        clickable: true,
+      },
+      autoplay: {
+        delay: 4000,
+      },
+      breakpoints: {
+        768: { slidesPerView: 2 },
+        1024: { slidesPerView: 3 }
+      }
+    });
+
+    // أنيميشن عناصر الأقسام عند دخولها viewport باستخدام ScrollTrigger
+    gsap.utils.toArray('.section-title').forEach(title => {
+      gsap.fromTo(title, 
+        { opacity: 0, y: 50 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1,
+          scrollTrigger: {
+            trigger: title,
+            start: 'top 80%',
+            end: 'top 50%',
+            scrub: 1
+          }
+        }
+      );
+    });
+
+    gsap.utils.toArray('.section-sub').forEach(sub => {
+      gsap.fromTo(sub, 
+        { opacity: 0, y: 50 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1,
+          scrollTrigger: {
+            trigger: sub,
+            start: 'top 80%',
+            end: 'top 50%',
+            scrub: 1
+          }
+        }
+      );
+    });
+
+    gsap.utils.toArray('.section-swiper').forEach(sw => {
+      gsap.fromTo(sw, 
+        { opacity: 0, scale: 0.95 },
+        {
+          opacity: 1,
+          scale: 1,
+          duration: 1.5,
+          scrollTrigger: {
+            trigger: sw,
+            start: 'top 80%',
+            end: 'top 50%',
+            scrub: 1
+          }
+        }
+      );
+    });
+
+    gsap.utils.toArray('.feature-card').forEach((card, i) => {
+      gsap.fromTo(card, 
+        { opacity: 0, y: 50 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1,
+          delay: i * 0.2,
+          scrollTrigger: {
+            trigger: card,
+            start: 'top 85%',
+            end: 'top 50%',
+            scrub: 1
+          }
+        }
+      );
+    });
+
+    gsap.fromTo('.cta-card', 
+      { opacity: 0, y: 50 },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 1.5,
+        scrollTrigger: {
+          trigger: '.cta-card',
+          start: 'top 80%',
+          end: 'top 50%',
+          scrub: 1
+        }
+      }
+    );
+  </script>
+</body>
+</html>
