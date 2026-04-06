@@ -70,7 +70,113 @@
       width: 100%;
     }
 
-    /* أزرار */
+    /* Mobile navigation */
+    .mobile-menu-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 3rem;
+      height: 3rem;
+      border-radius: 9999px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(7, 15, 36, 0.8);
+      color: #fff;
+      transition: transform 0.3s, background 0.3s;
+      z-index: 60;
+    }
+    .mobile-menu-button:hover {
+      transform: scale(1.05);
+      background: rgba(59, 130, 246, 0.15);
+    }
+    .mobile-menu {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      min-height: 100vh;
+      background: rgba(3, 6, 20, 0.98);
+      backdrop-filter: blur(20px);
+      z-index: 55;
+      transform: translateY(-100%);
+      opacity: 0;
+      transition: transform 0.35s ease, opacity 0.35s ease;
+      padding: 1.5rem 1rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .mobile-menu.open {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    .mobile-menu-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .mobile-menu-header .brand {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #fff;
+    }
+    .mobile-menu-close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 3rem;
+      height: 3rem;
+      border-radius: 9999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #fff;
+      background: rgba(255,255,255,0.04);
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .mobile-menu-close:hover {
+      background: rgba(255,255,255,0.1);
+    }
+    .mobile-menu-links {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    .mobile-menu-links a {
+      display: block;
+      padding: 1rem 1.25rem;
+      color: #e2e8f0;
+      font-size: 1rem;
+      border-radius: 1rem;
+      transition: background 0.3s, color 0.3s;
+    }
+    .mobile-menu-links a:hover {
+      background: rgba(59, 130, 246, 0.12);
+      color: #fff;
+    }
+    .mobile-menu-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+    .mobile-menu-actions a {
+      width: 100%;
+      text-align: center;
+      padding: 1rem 1.25rem;
+      border-radius: 9999px;
+      font-weight: 700;
+    }
+    .mobile-menu-actions .login-link {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.18);
+      color: #fff;
+    }
+    .mobile-menu-actions .register-link {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: #fff;
+      box-shadow: 0 10px 20px -10px rgba(59, 130, 246, 0.6);
+    }
     .btn-primary {
       background: linear-gradient(135deg, #3b82f6, #8b5cf6);
       transition: all 0.4s;
@@ -163,6 +269,24 @@
       pointer-events: none;
       z-index: 1;
     }
+
+    @media (max-width: 767px) {
+      .navbar { padding: 0.75rem; }
+      .container { padding: 0 1rem; }
+      .nav-link { font-size: 0.95rem; }
+      .hero-title { font-size: clamp(2.2rem, 12vw, 4rem); }
+      .hero-sub { font-size: 1rem; }
+      .btn-primary, .btn-outline { width: 100%; }
+      .btn-outline { justify-content: center; }
+      .glass-card { padding: 1.5rem; }
+      .feature-card { padding: 1.5rem; }
+      .cta-card { padding: 2rem 1.25rem; }
+      .swiper-slide { padding: 20px; }
+      .swiper-pagination { bottom: 10px; }
+      .parallax-bg { height: 140%; }
+      .container .grid-cols-1 { gap: 1.5rem; }
+      .mobile-menu a { padding: 0.9rem 1.25rem; }
+    }
   </style>
 </head>
 <body>
@@ -184,12 +308,32 @@
         <a href="#testimonials" class="nav-link text-white/80 hover:text-white">الآراء</a>
         <a href="#contact" class="nav-link text-white/80 hover:text-white">اتصل بنا</a>
       </div>
-      <div class="flex gap-3">
-        <a href="/login.html" class="px-5 py-2 btn-outline rounded-full text-white">دخول</a>
-        <a href="/register.html" class="px-5 py-2 btn-primary rounded-full text-white">انضم الآن</a>
+      <div class="flex gap-3 items-center">
+        <button id="menuToggle" class="md:hidden mobile-menu-button">
+          <i class="fas fa-bars"></i>
+        </button>
+        <a href="/login.html" class="hidden md:inline-flex px-5 py-2 btn-outline rounded-full text-white">دخول</a>
+        <a href="/register.html" class="hidden md:inline-flex px-5 py-2 btn-primary rounded-full text-white">انضم الآن</a>
       </div>
     </div>
   </nav>
+  <div id="mobileMenu" class="mobile-menu" aria-hidden="true">
+    <div class="mobile-menu-header">
+      <div class="brand"><span class="text-blue-400">💧</span> UBER WATER</div>
+      <button id="menuClose" class="mobile-menu-close"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="mobile-menu-links">
+      <a href="#">الرئيسية</a>
+      <a href="#how-it-works">كيف يعمل</a>
+      <a href="#features">المميزات</a>
+      <a href="#testimonials">الآراء</a>
+      <a href="#contact">اتصل بنا</a>
+    </div>
+    <div class="mobile-menu-actions">
+      <a href="/login.html" class="login-link">تسجيل دخول</a>
+      <a href="/register.html" class="register-link">انضم الآن</a>
+    </div>
+  </div>
 
   <!-- المحتوى الرئيسي -->
   <main class="relative z-10">
@@ -435,6 +579,42 @@
         navbar.classList.remove('navbar-scrolled');
       }
     });
+
+    // قائمة الموبايل
+    const menuToggle = document.getElementById('menuToggle');
+    const menuClose = document.getElementById('menuClose');
+    const mobileMenu = document.getElementById('mobileMenu');
+    const body = document.body;
+    const toggleMenu = (open) => {
+      const isOpen = open === undefined ? !mobileMenu.classList.contains('open') : open;
+      if (isOpen) {
+        mobileMenu.classList.add('open');
+        menuToggle.querySelector('i').classList.remove('fa-bars');
+        menuToggle.querySelector('i').classList.add('fa-times');
+        body.style.overflow = 'hidden';
+        mobileMenu.setAttribute('aria-hidden', 'false');
+      } else {
+        mobileMenu.classList.remove('open');
+        menuToggle.querySelector('i').classList.remove('fa-times');
+        menuToggle.querySelector('i').classList.add('fa-bars');
+        body.style.overflow = '';
+        mobileMenu.setAttribute('aria-hidden', 'true');
+      }
+    };
+    if (menuToggle && mobileMenu) {
+      menuToggle.addEventListener('click', () => toggleMenu());
+      if (menuClose) {
+        menuClose.addEventListener('click', () => toggleMenu(false));
+      }
+      window.addEventListener('resize', () => {
+        if (window.innerWidth >= 768) {
+          toggleMenu(false);
+        }
+      });
+      document.querySelectorAll('#mobileMenu a').forEach(link => {
+        link.addEventListener('click', () => toggleMenu(false));
+      });
+    }
 
     // تهيئة السلايدرات
     const swiper = new Swiper('.mySwiper', {

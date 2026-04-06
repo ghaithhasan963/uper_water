@@ -6,8 +6,9 @@ function initResponsive() {
       if (!sidebar) return;
       sidebar.classList.toggle('hidden');
       sidebar.classList.toggle('open');
-      // prevent body scroll when open
-      if (sidebar.classList.contains('open')) document.body.style.overflow = 'hidden'; else document.body.style.overflow = '';
+      const isOpen = sidebar.classList.contains('open');
+      document.body.style.overflow = isOpen ? 'hidden' : '';
+      document.body.classList.toggle('sidebar-open', isOpen);
     });
   });
 
@@ -21,6 +22,7 @@ function initResponsive() {
       sidebar.classList.add('hidden');
       sidebar.classList.remove('open');
       document.body.style.overflow = '';
+      document.body.classList.remove('sidebar-open');
     }
   });
 }

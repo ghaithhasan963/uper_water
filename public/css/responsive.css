@@ -14,9 +14,40 @@
   .glass-card { padding: 1.25rem; }
 }
 
-/* Sidebar: ensure full height scroll on mobile when toggled */
-#appSidebar { z-index: 60; }
-#appSidebar.open { position: fixed; left: 0; top: 0; bottom: 0; }
+/* Sidebar overlay behavior on mobile */
+#appSidebar {
+  z-index: 60;
+  width: min(100%, 20rem);
+  max-width: 22rem;
+  min-height: 100vh;
+  background: rgba(15, 23, 42, 0.97);
+  box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+  transform: translateX(-110%);
+  transition: transform 0.35s ease, opacity 0.35s ease;
+  opacity: 0;
+  overflow-y: auto;
+}
+#appSidebar.open {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  transform: translateX(0);
+  opacity: 1;
+}
+@media (min-width: 768px) {
+  #appSidebar {
+    position: relative;
+    transform: translateX(0);
+    opacity: 1;
+    box-shadow: none;
+    width: auto;
+    max-width: none;
+  }
+  [data-sidebar-toggle] { display: none; }
+}
+
+body.sidebar-open { overflow: hidden; }
 
 /* Slight tweak for order-card in small screens */
 .order-card { width: 100%; }
